@@ -21,9 +21,19 @@ export class OpenAIService extends ResourcePoolBase<OpenAIResource> {
         this.defaultModel = model?.trim() || undefined;
     }
 
-    getClient(resourceOverride?: OpenAIResource): AzureOpenAI {
+    getClient(resourceOverride?: OpenAIResource): OpenAI {
         const resource = resourceOverride || this.getBestResource().resource;
         if (!resource) throw new Error('Missing OpenAI env config');
+
+        // 사내/폐쇄망 vLLM(KAITO 등)은 OpenAI 호환 엔드포인트를 노출하므로
+        // AzureOpenAI 대신 표준 OpenAI 클라이언트(baseURL 지정)를 사용한다.
+        // 보안 정책(퍼블릭 LLM API 금지)을 만족하는 경로.
+        if (resource.provider === 'vllm') {
+            return new OpenAI({
+                baseURL: resource.endpoint, // 예: http://kaito-workspace-solar.kaito.svc.cluster.local/v1
+                apiKey: resource.key || 'not-needed', // 폐쇄망 vLLM은 보통 인증 불필요
+            });
+        }
 
         return new AzureOpenAI({
             endpoint: resource.endpoint,
@@ -113,11 +123,18 @@ export class OpenAIService extends ResourcePoolBase<OpenAIResource> {
         const maxRetries = 5;
         const deploymentName = await this.resolveTargetModel(model);
 
-        const useMaxCompletionTokens = !this.isGpt41Deployment(deploymentName);
+        // 해당 deployment이 vLLM(폐쇄망) 리소스인지 판별. vLLM의 OpenAI 호환 서버는
+        // max_completion_tokens가 아닌 max_tokens를 사용하며 temperature를 지원한다.
+        const isVllm = this.resources.some(
+            (r) => r.deploymentId === deploymentName && r.provider === 'vllm'
+        );
+
+        const useMaxCompletionTokens = !isVllm && !this.isGpt41Deployment(deploymentName);
         const useTemperature =
-            !this.isGpt55Deployment(deploymentName) &&
-            !this.isGpt5MiniDeployment(deploymentName) &&
-            !this.isGpt5NanoDeployment(deploymentName);
+            isVllm ||
+            (!this.isGpt55Deployment(deploymentName) &&
+                !this.isGpt5MiniDeployment(deploymentName) &&
+                !this.isGpt5NanoDeployment(deploymentName));
 
         const createRequest = () => {
             const request: any = {
