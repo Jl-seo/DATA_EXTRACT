@@ -1,0 +1,36 @@
+---
+apiVersion: redis.redis.opstreelabs.in/v1beta1
+kind: Redis
+metadata:
+  name: redis
+spec:
+  kubernetesConfig:
+    image: quay.io/opstree/redis:v7.2.6
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: azure-redis-storage
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 8Gi
+  securityContext:
+    runAsUser: 0
+    fsGroup: 1000
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azure-redis-storage
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: StandardSSD_LRS
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true

@@ -1,0 +1,56 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../base
+
+namespace: daom-app-prod
+
+images:
+  - name: ttoksiri.azurecr.io/daom/app:latest
+    newTag: production-20260323-1 # ← .env 에 적어둔 daom_IMAGE_VERSION 과 동일하게
+
+secretGenerator:
+  - name: daom-app-config
+    behavior: replace
+    envs:
+      - .env.production
+
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: daom-app
+      spec:
+        replicas: 1
+        template:
+          spec:
+            nodeSelector:
+              kubernetes.azure.com/agentpool: devpool
+            containers:
+            - name: daom-app
+              resources:
+                requests:
+                  memory: 1024Mi
+                  cpu: null
+                limits:
+                  memory: 1024Mi
+                  cpu: null
+
+  - patch: |-
+      apiVersion: redis.redis.opstreelabs.in/v1beta1
+      kind: Redis
+      metadata:
+        name: redis
+      spec:
+        nodeSelector:
+          kubernetes.azure.com/agentpool: devpool
+        kubernetesConfig:
+          resources:
+            requests:
+              cpu: null
+              memory: 512Mi
+            limits:
+              cpu: null
+              memory: 512Mi

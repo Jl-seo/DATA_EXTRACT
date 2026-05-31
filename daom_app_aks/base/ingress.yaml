@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: daom-app-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: ttoksiri-cluster-issuer
+    acme.cert-manager.io/http01-edit-in-place: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - daom-dev.koreacentral.cloudapp.azure.com
+      secretName: daom-app-ingress-secret
+  rules:
+    - host: daom-dev.koreacentral.cloudapp.azure.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: daom-app
+                port:
+                  number: 80
