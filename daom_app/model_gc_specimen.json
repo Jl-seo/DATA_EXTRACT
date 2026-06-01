@@ -1,0 +1,103 @@
+{
+  "name": "GC 검체 수집 - 검사의뢰서/검체라벨",
+  "description": "녹십자 검체 수집: 검체 라벨(바코드·수진자명·병원명) 및 검사의뢰서 수기 정보 추출. 식별자·고유명사는 보정 금지(환각 방지), 불확실 값은 사람 검증으로 라우팅.",
+  "data_structure": "data",
+  "model_type": "extraction",
+  "azure_model_id": "prebuilt-layout",
+  "show_in_gallery": true,
+  "global_rules": "이 문서는 의료 검체 라벨/검사의뢰서이며 개인정보+건강정보(민감정보)를 포함한다. 다음 규칙을 반드시 지켜라.\n1) 명백한 손글씨 OCR 오인식(자모/획 혼동)만 문맥에 근거해 교정한다.\n2) 바코드/등록번호/수진자번호 등 식별자(숫자·코드)는 읽은 그대로 두고 추측으로 치환하지 않는다.\n3) 수진자명·의뢰기관(병원)명·의뢰의 같은 고유명사는 레퍼런스 없이 임의로 바꾸지 않는다. 확신이 없으면 원문을 보존하고 other_data에 사유를 남긴다.\n4) 검사항목/검체종류는 표준 표기로의 정규화는 후처리(사전)에서 수행하므로, 추출 단계에서는 읽힌 값을 충실히 보존한다.\n5) 날짜/시간은 가능한 한 ISO 8601(YYYY-MM-DD 또는 YYYY-MM-DDTHH:mm)로 정규화한다.",
+  "beta_features": {
+    "enable_barcode_scan": true,
+    "barcode_multi_scan": true
+  },
+  "reference_data": {
+    "note": "검사항목/의뢰기관/검체종류 표준 코드는 normalization_dictionaries(사전) 및 외부 LIS 연동으로 대조. 수진자/병원은 바코드→LIS 역조회를 1순위 근거로 사용."
+  },
+  "fields": [
+    {
+      "key": "specimen_barcode",
+      "label": "검체 바코드",
+      "type": "text",
+      "is_required": true,
+      "description": "검체 라벨의 바코드 값(접수번호/검체번호). 가능하면 바코드 스캐너 디코드 값을 우선 사용.",
+      "rules": "식별자. 숫자/영문을 읽은 그대로 보존. 임의 변경·추측 금지. 이 값으로 LIS 역조회하여 수진자/검사 정보를 확정한다.",
+      "validation_regex": "^[A-Za-z0-9-]{6,}$"
+    },
+    {
+      "key": "patient_name",
+      "label": "수진자명",
+      "type": "text",
+      "is_required": true,
+      "description": "검체/의뢰서에 기재된 환자(수진자) 이름.",
+      "rules": "고유명사. 손글씨여도 임의로 흔한 이름으로 바꾸지 말 것(환각 금지). 불확실하면 원문 보존 + other_data에 표기. 바코드 LIS 역조회 값과 대조."
+    },
+    {
+      "key": "patient_reg_no",
+      "label": "등록번호/수진자번호",
+      "type": "text",
+      "description": "병원 등록번호 또는 수진자 식별번호.",
+      "rules": "식별자. 읽은 그대로 보존, 추측 치환 금지."
+    },
+    {
+      "key": "ordering_hospital",
+      "label": "의뢰기관(병원)",
+      "type": "text",
+      "is_required": true,
+      "dictionary_id": "의뢰기관",
+      "description": "검사를 의뢰한 병원/기관명.",
+      "rules": "고유명사. 임의 변경 금지. 표준 기관명 매핑은 후처리(사전)에서 수행."
+    },
+    {
+      "key": "ordering_doctor",
+      "label": "의뢰의(주치의)",
+      "type": "text",
+      "description": "의뢰 의사명.",
+      "rules": "고유명사. 임의 보정 금지, 불확실 시 원문 보존."
+    },
+    {
+      "key": "specimen_type",
+      "label": "검체종류",
+      "type": "text",
+      "dictionary_id": "검체종류",
+      "description": "혈청/혈장/전혈/소변/뇨 등 검체 종류.",
+      "rules": "읽힌 값 보존. 표준 코드 정규화는 후처리(사전)에서 수행."
+    },
+    {
+      "key": "collected_at",
+      "label": "채취일시",
+      "type": "date",
+      "description": "검체 채취 일시.",
+      "rules": "가능하면 ISO 8601(YYYY-MM-DD 또는 YYYY-MM-DDTHH:mm)로 정규화."
+    },
+    {
+      "key": "requested_at",
+      "label": "의뢰일자",
+      "type": "date",
+      "description": "검사 의뢰 일자.",
+      "rules": "가능하면 ISO 8601(YYYY-MM-DD)로 정규화."
+    },
+    {
+      "key": "test_items",
+      "label": "검사항목",
+      "type": "table",
+      "description": "의뢰된 검사항목 목록(표/체크 형태).",
+      "rules": "체크/기재된 항목만 추출. 임의 추가 금지.",
+      "sub_fields": [
+        {
+          "key": "test_code",
+          "label": "검사코드",
+          "type": "text",
+          "dictionary_id": "검사항목",
+          "rules": "식별 코드. 읽은 그대로 보존, 표준화는 후처리(사전)."
+        },
+        {
+          "key": "test_name",
+          "label": "검사항목명",
+          "type": "text",
+          "dictionary_id": "검사항목",
+          "rules": "표준 항목명 매핑은 후처리(사전)에서 수행."
+        }
+      ]
+    }
+  ]
+}
