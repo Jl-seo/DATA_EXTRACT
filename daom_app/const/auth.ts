@@ -1,0 +1,1 @@
+export const AUTH_TOKEN_VERSION = '0.0.1';

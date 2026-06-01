@@ -1,0 +1,124 @@
+{
+  "id": "aa0d6635-a801-416e-8159-00c5dff689ef",
+  "name": "현대코-",
+  "global_rules": "",
+  "data_structure": "data",
+  "model_type": "extraction",
+  "azure_model_id": "prebuilt-layout",
+  "webhook_url": "",
+  "fields": [
+    {
+      "key": "po_items",
+      "label": "Structured breakdown of purchase order line items with specification extraction.",
+      "description": "",
+      "rules": "",
+      "type": "table",
+      "is_required": false,
+      "dictionary_id": "",
+      "validation_regex": "",
+      "sub_fields": [
+        {
+          "key": "line",
+          "label": "Line counut",
+          "rules": "",
+          "type": "number",
+          "is_required": false,
+          "validation_regex": ""
+        },
+        {
+          "key": "po_num",
+          "label": "PO nubmerS",
+          "rules": "",
+          "type": "text",
+          "is_required": false,
+          "validation_regex": ""
+        },
+        {
+          "key": "width",
+          "label": "Width of the item, if applicable.",
+          "rules": "",
+          "type": "text",
+          "is_required": false,
+          "validation_regex": ""
+        },
+        {
+          "key": "thickness",
+          "label": "Thickness of the item, if applicable.",
+          "rules": "",
+          "type": "text",
+          "is_required": false,
+          "validation_regex": ""
+        },
+        {
+          "key": "length",
+          "label": "Length of the item, if applicable.",
+          "rules": "",
+          "type": "text",
+          "is_required": false,
+          "validation_regex": ""
+        },
+        {
+          "key": "quantity",
+          "label": "Quantity of the item, if applicable.",
+          "rules": "",
+          "type": "text",
+          "is_required": false,
+          "validation_regex": ""
+        },
+        {
+          "key": "weight",
+          "label": "Weight of the item, if applicable.",
+          "rules": "",
+          "type": "text",
+          "is_required": false,
+          "validation_regex": ""
+        },
+        {
+          "key": "price",
+          "label": "Unit price.",
+          "rules": "",
+          "type": "text",
+          "is_required": false,
+          "validation_regex": ""
+        },
+        {
+          "key": "grade",
+          "label": "Material grade extracted from description (e.g., A252, X42, GR. B/X42).",
+          "rules": "",
+          "type": "text",
+          "is_required": false,
+          "validation_regex": ""
+        },
+        {
+          "key": "due_date",
+          "label": "Delivery due date extracted from description, if present",
+          "rules": "",
+          "type": "date",
+          "is_required": false,
+          "validation_regex": ""
+        }
+      ]
+    }
+  ],
+  "partition_key": "model",
+  "is_active": true,
+  "show_in_gallery": true,
+  "is_super_model": false,
+  "sub_model_ids": [],
+  "created_at": "2026-03-31T10:35:11.582Z",
+  "created_by": {
+    "name": "허진훈",
+    "upn": "jh.heo@dexconsulting.net",
+    "object_id": "8fee89a4-21e9-4270-b04c-4f466989e6e5"
+  },
+  "modified_by": {
+    "name": "허진훈",
+    "upn": "jh.heo@dexconsulting.net",
+    "object_id": "8fee89a4-21e9-4270-b04c-4f466989e6e5"
+  },
+  "_rid": "yrIkAMGO8a0bAAAAAAAAAA==",
+  "_self": "dbs/yrIkAA==/colls/yrIkAMGO8a0=/docs/yrIkAMGO8a0bAAAAAAAAAA==/",
+  "_etag": "\"4004e778-0000-2500-0000-69cba35f0000\"",
+  "_attachments": "attachments/",
+  "_ts": 1774953311
+}
