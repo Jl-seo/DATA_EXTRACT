@@ -14,6 +14,9 @@ export interface AzureOcrWord {
     boundingBox?: number[];
     polygon?: number[];
     span?: { offset: number; length: number };
+    // 단어 단위 OCR 신뢰도(0~1). Azure DI가 단어별로 제공.
+    // 임계값 이하 단어는 LLM 프롬프트에서 '교정 필요 의심 단어'로 태깅한다.
+    confidence?: number;
 }
 
 export interface AzureOcrTable {

@@ -2699,6 +2699,58 @@ IMPORTANT:
         return `[${x1},${y1},${x2},${y2}] ${content}`;
     }
 
+    // OCR 단어 신뢰도가 이 값 이하이면 '교정 필요 의심 단어'로 LLM에 알린다(지시서 5.1).
+    private readonly lowConfidenceThreshold = 0.7;
+
+    /**
+     * 페이지별 words[]에서 신뢰도 임계값 이하 단어를 모아 LLM에 집중 교정을 유도하는 안내 블록 생성.
+     * (paragraph 텍스트를 쓰든 word 텍스트를 쓰든 동일하게 동작)
+     */
+    private buildLowConfidenceNotice(ocrData: AnalyzeResult): string {
+        const threshold = this.lowConfidenceThreshold;
+        const lines: string[] = [];
+        for (const page of ocrData.pages || []) {
+            const pageNum = (page as any).pageNumber || (page as any).page_number || 1;
+            const words = Array.isArray((page as any)?.words) ? (page as any).words : [];
+            const suspects = Array.from(
+                new Set(
+                    words
+                        .filter((w: any) => w && typeof w === 'object'
+                            && typeof w.confidence === 'number'
+                            && w.confidence <= threshold
+                            && String(w.content || '').trim().length > 0)
+                        .map((w: any) => `${String(w.content).trim()}(${w.confidence.toFixed(2)})`)
+                )
+            );
+            if (suspects.length > 0) {
+                lines.push(`- Page ${pageNum}: ${suspects.join(', ')}`);
+            }
+        }
+        if (lines.length === 0) return '';
+        return [
+            '',
+            '[교정 필요 의심 단어] (OCR 신뢰도 낮음, 괄호는 신뢰도)',
+            ...lines,
+            '위 단어들은 손글씨 오인식 가능성이 높으니 문맥을 특히 집중해서 살펴 교정 여부를 판단하라.',
+        ].join('\n');
+    }
+
+    /**
+     * 고유명사(수진자명/병원명)·식별자(바코드/등록번호) 환각 방지 가드레일.
+     * GC 검체 도메인: 손글씨 이름/식별자를 임의로 그럴듯한 값으로 바꾸지 말 것.
+     */
+    private buildCorrectionGuardrails(): string {
+        return [
+            '',
+            'CORRECTION GUARDRAILS (MANDATORY):',
+            '- 명백한 OCR 오인식(자모/획 혼동 등)만 문맥에 근거해 교정한다.',
+            '- 사람 이름·병원/기관명 같은 고유명사와 바코드·등록번호·검체번호 같은 식별자는',
+            '  레퍼런스/문맥 근거 없이 임의로 바꾸지 않는다(환각 금지). 확신이 없으면 원문을 보존한다.',
+            '- 식별자(숫자/코드)는 글자 형태가 유사해도 추측으로 치환하지 말고 읽은 그대로 둔다.',
+            '- 보정·판단이 불확실한 값은 "other_data"에 사유와 함께 남겨 사람이 검증하게 한다.',
+        ].join('\n');
+    }
+
     private buildStrictOutputContract(model: ExtractionModel): string {
         const fieldKeys = model.fields.map((field) => field.key);
         return [
@@ -2890,7 +2942,13 @@ IMPORTANT:
             const wordsText = pageWords
                 .map((w: any) => {
                     if (!w || typeof w !== 'object') return '';
-                    return String(w.content || '').trim();
+                    const content = String(w.content || '').trim();
+                    if (!content) return '';
+                    // 저신뢰 단어는 인라인으로 태깅하여 LLM이 집중 교정하도록 유도
+                    if (typeof w.confidence === 'number' && w.confidence <= this.lowConfidenceThreshold) {
+                        return `${content}[교정 필요 의심 단어]`;
+                    }
+                    return content;
                 })
                 .filter((t: string) => t.length > 0)
                 .join(' ');

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getLLMSettings, updateLLMSettings } from '@/actions/llmSettings';
 import { LLMSettings } from '@/scheme/llmSettings';
+import { LocalLlmTestCard } from './LocalLlmTestCard';
 
 export function LLMTab() {
     const [settings, setSettings] = useState<LLMSettings | null>(null);
@@ -70,6 +71,7 @@ export function LLMTab() {
     }
 
     return (
+        <div className="space-y-6">
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -170,5 +172,8 @@ export function LLMTab() {
                 </div>
             </CardContent>
         </Card>
+
+        <LocalLlmTestCard />
+        </div>
     );
 }
